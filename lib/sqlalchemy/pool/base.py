@@ -233,7 +233,7 @@ class Pool(log.Identified):
             return lambda crec: creator()
 
     def _close_connection(self, connection):
-        self.logger.debug("Closing connection %r", connection)
+        self.logger.info("Closing connection %r", connection)
 
         try:
             self._dialect.do_close(connection)
@@ -431,7 +431,7 @@ class _ConnectionRecord(object):
             and _finalize_fairy(None, rec, pool, ref, echo),
         )
         if echo:
-            pool.logger.debug(
+            pool.logger.info(
                 "Connection %r checked out from pool", dbapi_connection
             )
         return fairy
@@ -578,12 +578,12 @@ class _ConnectionRecord(object):
         try:
             self.starttime = time.time()
             connection = pool._invoke_creator(self)
-            pool.logger.debug("Created new connection %r", connection)
+            pool.logger.info("Created new connection %r", connection)
             self.connection = connection
             self.fresh = True
         except Exception as e:
             with util.safe_reraise():
-                pool.logger.debug("Error on connect(): %s", e)
+                pool.logger.info("Error on connect(): %s", e)
         else:
             if first_connect_check:
                 pool.dispatch.first_connect.for_modify(
@@ -609,7 +609,7 @@ def _finalize_fairy(
 
     if connection is not None:
         if connection_record and echo:
-            pool.logger.debug(
+            pool.logger.info(
                 "Connection %r being returned to pool", connection
             )
 
@@ -700,6 +700,7 @@ class _ConnectionFairy(object):
 
             fairy._pool = pool
             fairy._counter = 0
+            fairy._echo = True
 
             if threadconns is not None:
                 threadconns.current = weakref.ref(fairy)
@@ -707,6 +708,7 @@ class _ConnectionFairy(object):
         if fairy.connection is None:
             raise exc.InvalidRequestError("This connection is closed")
         fairy._counter += 1
+        pool.logger.info()
         if (
             not pool.dispatch.checkout and not pool._pre_ping
         ) or fairy._counter != 1:
@@ -719,27 +721,27 @@ class _ConnectionFairy(object):
         # here.
         attempts = 2
         while attempts > 0:
+            pool.logger.info('I AM HERE')
             connection_is_fresh = fairy._connection_record.fresh
             fairy._connection_record.fresh = False
             try:
                 if pool._pre_ping:
+                    pool.logger.info('PING ENABLED')
                     if not connection_is_fresh:
-                        if fairy._echo:
-                            pool.logger.debug(
-                                "Pool pre-ping on connection %s",
-                                fairy.connection,
-                            )
+                        pool.logger.info(
+                            "Pool pre-ping on connection %s",
+                            fairy.connection,
+                        )
                         result = pool._dialect.do_ping(fairy.connection)
                         if not result:
-                            if fairy._echo:
-                                pool.logger.debug(
-                                    "Pool pre-ping on connection %s failed, "
-                                    "will invalidate pool",
-                                    fairy.connection,
-                                )
+                            pool.logger.info(
+                                "Pool pre-ping on connection %s failed, "
+                                "will invalidate pool",
+                                fairy.connection,
+                            )
                             raise exc.InvalidatePoolError()
-                    elif fairy._echo:
-                        pool.logger.debug(
+                    else:
+                        pool.logger.info(
                             "Connection %s is fresh, skipping pre-ping",
                             fairy.connection,
                         )
@@ -802,7 +804,7 @@ class _ConnectionFairy(object):
             pool.dispatch.reset(self, self._connection_record)
         if pool._reset_on_return is reset_rollback:
             if self._echo:
-                pool.logger.debug(
+                pool.logger.info(
                     "Connection %s rollback-on-return%s",
                     self.connection,
                     ", via agent" if self._reset_agent else "",
@@ -821,7 +823,7 @@ class _ConnectionFairy(object):
                 pool._dialect.do_rollback(self)
         elif pool._reset_on_return is reset_commit:
             if self._echo:
-                pool.logger.debug(
+                pool.logger.info(
                     "Connection %s commit-on-return%s",
                     self.connection,
                     ", via agent" if self._reset_agent else "",
