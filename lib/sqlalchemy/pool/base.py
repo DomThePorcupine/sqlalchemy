@@ -169,12 +169,12 @@ class Pool(log.Identified):
         else:
             self._orig_logging_name = None
 
-        log.instance_logger(self, echoflag=echo)
+        log.instance_logger(self, echoflag=True)
         self._threadconns = threading.local()
         self._creator = creator
         self._recycle = recycle
         self._invalidate_time = 0
-        self._pre_ping = pre_ping
+        self._pre_ping = True
         self._reset_on_return = util.symbol.parse_user_argument(
             reset_on_return,
             {
@@ -186,7 +186,7 @@ class Pool(log.Identified):
             resolve_symbol_names=False,
         )
 
-        self.echo = echo
+        self.echo = True
 
         if _dispatch:
             self.dispatch._update(_dispatch, only_propagate=False)
@@ -195,6 +195,7 @@ class Pool(log.Identified):
         if events:
             for fn, target in events:
                 event.listen(self, target, fn)
+        self.logger.info('Set pre ping and echo!!!!')
 
     @property
     def _creator(self):
