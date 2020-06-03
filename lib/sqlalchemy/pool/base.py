@@ -708,12 +708,13 @@ class _ConnectionFairy(object):
         if fairy.connection is None:
             raise exc.InvalidRequestError("This connection is closed")
         fairy._counter += 1
-        pool.logger.info()
+        pool.logger.info('before')
         if (
             not pool.dispatch.checkout and not pool._pre_ping
         ) or fairy._counter != 1:
             return fairy
-
+        
+        pool.logger.info('After')
         # Pool listeners can trigger a reconnection on checkout, as well
         # as the pre-pinger.
         # there are three attempts made here, but note that if the database
