@@ -662,7 +662,7 @@ class _ConnectionFairy(object):
     def __init__(self, dbapi_connection, connection_record, echo):
         self.connection = dbapi_connection
         self._connection_record = connection_record
-        self._echo = echo
+        self._echo = True
 
     connection = None
     """A reference to the actual DBAPI connection being tracked."""
